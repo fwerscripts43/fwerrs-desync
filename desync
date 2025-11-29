@@ -1,28 +1,178 @@
--- Desync Script for Roblox (Xeno Executor)
--- Use at your own risk—may result in bans.
+-- "Steal a Brainrot" Quantum Cloner Desync Script (Xeno Compatible)
+-- Use at your own risk.
 
-local player = game.Players.LocalPlayer
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+-- Player Objects
+local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
 
--- Desync variables
-local desyncSpeed = 0.5  -- Adjust for stronger/weaker desync
-local desyncToggle = false
+-- Desync Variables
+local isDesyncing = false
+local isStartingDesync = false
+local desyncSpeed = 0.8 -- Slightly higher for a more noticeable effect
+local desyncDelay = 3 -- The delay in seconds
 
--- Function to toggle desync
+-- === GUI Creation ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BrainrotDesyncGUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.ResetOnSpawn = false
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.Size = UDim2.new(0, 200, 0, 50)
+mainFrame.Position = UDim2.new(0, 10, 0, 10)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+
+-- Desync Button
+local desyncButton = Instance.new("TextButton")
+desyncButton.Name = "DesyncButton"
+desyncButton.Parent = mainFrame
+desyncButton.Size = UDim2.new(1, 0, 1, 0)
+desyncButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+desyncButton.BorderSizePixel = 0
+desyncButton.Font = Enum.Font.SourceSansBold
+desyncButton.Text = "Quantum Desync"
+desyncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+desyncButton.TextSize = 18
+
+-- Desync Overlay Frame (Hidden by default)
+local overlayFrame = Instance.new("Frame")
+overlayFrame.Name = "OverlayFrame"
+overlayFrame.Parent = screenGui
+overlayFrame.Size = UDim2.new(1, 0, 1, 0)
+overlayFrame.Position = UDim2.new(0, 0, 0, 0)
+overlayFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+overlayFrame.BorderSizePixel = 0
+overlayFrame.Visible = false
+overlayFrame.BackgroundTransparency = 1
+
+-- Desyncing... Label
+local desyncingLabel = Instance.new("TextLabel")
+desyncingLabel.Name = "DesyncingLabel"
+desyncingLabel.Parent = overlayFrame
+desyncingLabel.Size = UDim2.new(1, 0, 1, 0)
+desyncingLabel.BackgroundTransparency = 1
+desyncingLabel.Font = Enum.Font.SourceSansBold
+desyncingLabel.Text = "Cloning..."
+desyncingLabel.TextColor3 = Color3.fromRGB(255, 0, 255)
+desyncingLabel.TextSize = 48
+desyncingLabel.TextStrokeTransparency = 0
+desyncingLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+desyncingLabel.TextTransparency = 1
+
+-- === Desync Logic ===
+local function findQuantumCloner()
+    local backpack = player:WaitForChild("Backpack")
+    for _, tool in pairs(backpack:GetChildren()) do
+        if tool.Name == "Quantum Cloner" then
+            return tool
+        end
+    end
+    return nil
+end
+
+local function startDesync()
+    if isDesyncing or isStartingDesync then
+        return
+    end
+    isStartingDesync = true
+
+    -- Find the tool
+    local cloner = findQuantumCloner()
+    if not cloner then
+        -- Warn user if tool is not found
+        desyncButton.Text = "Tool Not Found"
+        task.wait(2)
+        desyncButton.Text = "Quantum Desync"
+        isStartingDesync = false
+        return
+    end
+
+    -- Show overlay and disable button
+    overlayFrame.Visible = true
+    desyncButton.Enabled = false
+
+    -- Fade in effect
+    local fadeInTween = TweenService:Create(overlayFrame, TweenInfo.new(0.5), {BackgroundTransparency = 0})
+    local textFadeInTween = TweenService:Create(desyncingLabel, TweenInfo.new(0.5), {TextTransparency = 0})
+    fadeInTween:Play()
+    textFadeInTween:Play()
+
+    -- Equip and activate the tool
+    humanoid:EquipTool(cloner)
+    cloner:Activate()
+
+    -- Wait for the specified delay
+    task.wait(desyncDelay)
+
+    -- Check if player is still in game
+    if not player or not character or not character.Parent then
+        overlayFrame.Visible = false
+        desyncButton.Enabled = true
+        isStartingDesync = false
+        return
+    end
+
+    -- Activate desync
+    isDesyncing = true
+    isStartingDesync = false
+    desyncButton.Text = "Stop Desync"
+    desyncButton.Enabled = true
+    desyncingLabel.Text = "Desync Active"
+    print("Quantum Desync Activated")
+end
+
+local function stopDesync()
+    if not isDesyncing then
+        return
+    end
+
+    isDesyncing = false
+
+    -- Unequip the tool to stop the animation
+    if humanoid.Parent then
+        humanoid:UnequipTools()
+    end
+
+    -- Fade out effect
+    local fadeOutTween = TweenService:Create(overlayFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+    local textFadeOutTween = TweenService:Create(desyncingLabel, TweenInfo.new(0.5), {TextTransparency = 1})
+    fadeOutTween:Play()
+    textFadeOutTween:Play()
+
+    fadeOutTween.Completed:Connect(function()
+        overlayFrame.Visible = false
+    end)
+    
+    desyncButton.Text = "Quantum Desync"
+    print("Quantum Desync Deactivated")
+end
+
 local function toggleDesync()
-    desyncToggle = not desyncToggle
-    if desyncToggle then
-        print("Desync ON")
+    if isDesyncing then
+        stopDesync()
     else
-        print("Desync OFF")
+        startDesync()
     end
 end
 
+-- Button Connection
+desyncButton.MouseButton1Click:Connect(toggleDesync)
+
 -- Main desync loop
-game:GetService("RunService").Heartbeat:Connect(function()
-    if desyncToggle then
+RunService.Heartbeat:Connect(function()
+    if isDesyncing and character and character.Parent then
         -- Manipulate network replication
         rootPart.Velocity = rootPart.Velocity + Vector3.new(
             math.random(-desyncSpeed, desyncSpeed),
@@ -30,7 +180,6 @@ game:GetService("RunService").Heartbeat:Connect(function()
             math.random(-desyncSpeed, desyncSpeed)
         )
         
-        -- Optional: Break server-side replication
         humanoid:Move(rootPart.Position + Vector3.new(
             math.random(-1, 1),
             0,
@@ -38,10 +187,3 @@ game:GetService("RunService").Heartbeat:Connect(function()
         ))
     end
 end)
-
--- Toggle key (e.g., "Q" key)
-game:GetService("UserInputService").InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Q then
-        toggleDesync()
-    end
-end) 
