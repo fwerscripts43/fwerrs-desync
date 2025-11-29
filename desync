@@ -1,0 +1,47 @@
+-- Desync Script for Roblox (Xeno Executor)
+-- Use at your own risk—may result in bans.
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Desync variables
+local desyncSpeed = 0.5  -- Adjust for stronger/weaker desync
+local desyncToggle = false
+
+-- Function to toggle desync
+local function toggleDesync()
+    desyncToggle = not desyncToggle
+    if desyncToggle then
+        print("Desync ON")
+    else
+        print("Desync OFF")
+    end
+end
+
+-- Main desync loop
+game:GetService("RunService").Heartbeat:Connect(function()
+    if desyncToggle then
+        -- Manipulate network replication
+        rootPart.Velocity = rootPart.Velocity + Vector3.new(
+            math.random(-desyncSpeed, desyncSpeed),
+            0,
+            math.random(-desyncSpeed, desyncSpeed)
+        )
+        
+        -- Optional: Break server-side replication
+        humanoid:Move(rootPart.Position + Vector3.new(
+            math.random(-1, 1),
+            0,
+            math.random(-1, 1)
+        ))
+    end
+end)
+
+-- Toggle key (e.g., "Q" key)
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Q then
+        toggleDesync()
+    end
+end) 
